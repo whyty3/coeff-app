@@ -2,12 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    
+    <!-- 1. The Favicon (Browser Tab) -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    
+    <!-- 2. The Apple Home Screen Icon (iPhone PWA) -->
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- 3. SEO & Social Metadata -->
     <title>coeff.io | Portfolio Risk Scanner</title>
+    <meta name="description" content="Institutional-grade portfolio risk analysis. Calculate correlation matrices, fragility scores, and beta in real-time." />
+    
+    <!-- 4. Open Graph (WhatsApp / LinkedIn Previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://coeff.io/" />
+    <meta property="og:title" content="coeff.io | Quant Risk Scanner" />
+    <meta property="og:description" content="Is your portfolio diversified or just correlated? Check your Fragility Score now." />
+    <meta property="og:image" content="https://coeff.io/icon.svg" />
+
+    <!-- 5. Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="coeff.io | Portfolio Fragility Score" />
+    <meta name="twitter:description" content="Don't trade blind. See the hidden correlations in your portfolio." />
+    <meta name="twitter:image" content="https://coeff.io/icon.svg" />
+
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
+    <!-- Standard Vite Entry Point -->
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
