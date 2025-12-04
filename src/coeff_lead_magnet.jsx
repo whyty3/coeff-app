@@ -4,7 +4,7 @@ import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, La
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.22 (Feature: PWA Install Prompt + Indigo Logo)
+ * VERSION: Production v2.23 (Feature: Manual Install Button in Header)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -13,7 +13,7 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-// --- BRAND ASSET: THE INDIGO ENGINE LOGO ---
+// --- BRAND ASSETS ---
 const CoeffLogo = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
@@ -22,17 +22,9 @@ const CoeffLogo = ({ className = "w-8 h-8" }) => (
         <stop offset="1" stopColor="#1e1b4b" /> {/* Indigo 950 */}
       </linearGradient>
     </defs>
-    
-    {/* App Icon Container with Gradient */}
     <rect width="40" height="40" rx="10" fill="url(#logoGradient)" />
-    
-    {/* The Correlation Link */}
     <path d="M12 28L28 12" stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.5"/>
-    
-    {/* Asset A (Cyan - Tech/Cold) */}
     <circle cx="12" cy="28" r="5" fill="#22d3ee" />
-    
-    {/* Asset B (Amber - Value/Hot) */}
     <circle cx="28" cy="12" r="5" fill="#fbbf24" />
   </svg>
 );
@@ -95,7 +87,8 @@ export default function CoeffRiskAnalyzer() {
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallBanner(true);
+      // We don't auto-show the banner anymore to be less intrusive
+      // We wait for user to click the "Download" icon
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -103,13 +96,14 @@ export default function CoeffRiskAnalyzer() {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
+      // Android/Desktop Chrome: Native Prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setShowInstallBanner(false);
-      setDeferredPrompt(null);
+      if (outcome === 'accepted') setDeferredPrompt(null);
+      setShowInstallBanner(false);
     } else {
-      // iOS Fallback / Instructions
-      alert("To install on iPhone:\n1. Tap the 'Share' button below\n2. Scroll down and tap 'Add to Home Screen'");
+      // iOS/Safari: Manual Instructions
+      setShowInstallBanner(true); // Show the banner with instructions/close button
     }
   };
 
@@ -203,7 +197,6 @@ export default function CoeffRiskAnalyzer() {
   };
 
   const handleExportPDF = () => window.print();
-  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
@@ -434,7 +427,26 @@ Analyze this data at https://coeff.io`;
           <div className="hidden sm:flex items-center gap-3">
              {!PROXY_URL && <input type="password" placeholder="Dev Mode: API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none" />}
              {PROXY_URL && <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
-             {walletAddress ? <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>{formatAddress(walletAddress)}</div> : <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2"><Wallet className="w-4 h-4" /> Connect Wallet</button>}
+             {walletAddress ? (
+                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    {formatAddress(walletAddress)}
+                 </div>
+             ) : (
+                 <div className="flex gap-2">
+                     {/* MANUAL INSTALL BUTTON (VISIBLE ON HEADER) */}
+                     <button onClick={handleInstallClick} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2">
+                       <Download className="w-4 h-4" />
+                       <span className="hidden sm:inline">App</span>
+                     </button>
+                     
+                     <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2">
+                       <Wallet className="w-4 h-4" />
+                       <span className="hidden sm:inline">Connect</span>
+                       <span className="sm:hidden">Wallet</span>
+                     </button>
+                 </div>
+             )}
           </div>
         </div>
       </nav>
@@ -451,6 +463,7 @@ Analyze this data at https://coeff.io`;
           {dataQualityMsg && <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-900/20 border border-amber-900/50 text-amber-400 text-xs font-bold animate-in fade-in slide-in-from-top-2"><AlertTriangle className="w-4 h-4" />{dataQualityMsg}</div>}
         </div>
 
+        {/* ... REST OF THE CODE REMAINS THE SAME ... */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           <Card className="space-y-4">
             <div className="flex justify-between items-center mb-2">
@@ -536,35 +549,21 @@ Analyze this data at https://coeff.io`;
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h4>
-                  
-                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
-                    
-                    {/* Header Row */}
                     <div className="h-8"></div>
                     {assets.map(a => (
                       <div key={a.ticker} className="flex items-center justify-center text-[9px] font-mono text-slate-500 font-bold h-8">
                         {a.ticker}
                       </div>
                     ))}
-
-                    {/* Data Rows */}
                     {results.matrix.map((row, i) => (
                       <React.Fragment key={i}>
-                        {/* Vertical Label */}
                         <div className="flex items-center justify-end pr-2 text-[9px] font-mono text-slate-500 font-bold h-10">
                           {assets[i].ticker}
                         </div>
-                        {/* Cells */}
                         {row.map((val, j) => (
-                          <div 
-                            key={`${i}-${j}`} 
-                            className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" 
-                            style={{ backgroundColor: getHeatmapColor(val) }}
-                          >
-                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">
-                              {val.toFixed(2)}
-                            </span>
+                          <div key={`${i}-${j}`} className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" style={{ backgroundColor: getHeatmapColor(val) }}>
+                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">{val.toFixed(2)}</span>
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
                           </div>
                         ))}
