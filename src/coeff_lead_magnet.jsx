@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, Copy, X } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, Copy, X, Menu } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.24 (Fix: Mobile Header Visibility)
+ * VERSION: Production v2.26 (Fix: Android Manual Install Instructions)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -94,12 +94,14 @@ export default function CoeffRiskAnalyzer() {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
+      // Case 1: Browser allows auto-prompt (Android/Desktop)
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') setDeferredPrompt(null);
       setShowInstallBanner(false);
     } else {
-      setShowInstallBanner(true); 
+      // Case 2: Browser blocked it or iOS (Manual Instructions)
+      alert("To install manually:\n\n🤖 Android: Tap the menu (⋮) -> 'Install App' or 'Add to Home screen'\n\n🍎 iOS: Tap Share -> 'Add to Home Screen'");
     }
   };
 
@@ -421,15 +423,13 @@ Analyze this data at https://coeff.io`;
             <span className="text-xl font-bold text-slate-100 tracking-tight">coeff.io</span>
           </div>
           
-          {/* RIGHT HEADER - FIXED VISIBILITY */}
+          {/* RIGHT HEADER */}
           <div className="flex items-center gap-2 sm:gap-3">
-             {/* Input hidden on smallest screens, visible on larger */}
              {!PROXY_URL && <input type="password" placeholder="Dev API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="hidden sm:block bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none" />}
              
-             {/* Secure badge hidden on mobile to save space */}
              {PROXY_URL && <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
 
-             {/* BUTTONS: Visible on ALL screens, using icons-only on mobile */}
+             {/* BUTTONS */}
              {walletAddress ? (
                  <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -447,6 +447,7 @@ Analyze this data at https://coeff.io`;
                      <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2">
                        <Wallet className="w-4 h-4" />
                        <span className="hidden sm:inline">Connect</span>
+                       <span className="sm:hidden">Wallet</span>
                      </button>
                  </div>
              )}
@@ -466,7 +467,6 @@ Analyze this data at https://coeff.io`;
           {dataQualityMsg && <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-900/20 border border-amber-900/50 text-amber-400 text-xs font-bold animate-in fade-in slide-in-from-top-2"><AlertTriangle className="w-4 h-4" />{dataQualityMsg}</div>}
         </div>
 
-        {/* ... REST OF THE CODE IS UNCHANGED ... */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           <Card className="space-y-4">
             <div className="flex justify-between items-center mb-2">
