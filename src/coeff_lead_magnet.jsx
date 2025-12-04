@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.11 (Final Release Candidate)
+ * VERSION: Production v2.19 (Fix: Currency Display + Unbreakable Backend)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -13,39 +13,26 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-// --- BRAND ASSET: THE REGRESSION MARK (HIGH CONTRAST) ---
+// --- BRAND ASSETS ---
 const CoeffLogo = ({ className = "w-6 h-6" }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    className={className}
-  >
-    {/* Abstract Hexagon Container - Slate Blue for structure */}
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-    
-    {/* The Regression Line - Electric Amber (Gold) to POP against dark mode */}
     <path d="M7 17l10-10" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
-    
-    {/* Data Points - Cyan for Tech/Quant contrast */}
     <circle cx="7" cy="17" r="1.5" fill="#22d3ee" />
     <circle cx="12" cy="12" r="1.5" fill="#22d3ee" />
     <circle cx="17" cy="7" r="1.5" fill="#22d3ee" />
-    
-    {/* Outlier Point - Rose Red for Risk */}
     <circle cx="16" cy="14" r="1.2" fill="#f43f5e" />
   </svg>
 );
 
-// --- BRAND ASSET: X/TWITTER LOGO ---
 const XLogo = ({ className = "w-4 h-4" }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
-// --- CONFIGURATION ---
 const PROXY_URL = "https://coeff-data-proxy.wrighttim.workers.dev"; 
+const MAX_ASSETS = 10;
 
 // --- MATH UTILS ---
 const getCorrelation = (x, y) => {
@@ -56,6 +43,12 @@ const getCorrelation = (x, y) => {
   const num = x.reduce((sum, xi, i) => sum + (xi - meanX) * (y[i] - meanY), 0);
   const den = Math.sqrt(x.reduce((sum, xi) => sum + Math.pow(xi - meanX, 2), 0) * y.reduce((sum, yi) => sum + Math.pow(yi - meanY, 2), 0));
   return den === 0 ? 0 : num / den;
+};
+
+const getCurrencySymbol = (isoCode) => {
+    if (!isoCode) return '$';
+    const map = { 'USD': '$', 'GBP': '£', 'EUR': '€', 'JPY': '¥', 'CNY': '¥' };
+    return map[isoCode] || isoCode;
 };
 
 const DEFAULT_ASSETS = [
@@ -76,7 +69,10 @@ export default function CoeffRiskAnalyzer() {
   const [dataQualityMsg, setDataQualityMsg] = useState("");
   const [latestPrices, setLatestPrices] = useState({}); 
 
-  // --- KEY MANAGEMENT ---
+  const totalWeight = useMemo(() => assets.reduce((sum, a) => sum + (a.weight || 0), 0), [assets]);
+  const isWeightError = totalWeight > 100;
+  const isMaxAssets = assets.length >= MAX_ASSETS;
+
   useEffect(() => {
     if (!PROXY_URL) {
         const params = new URLSearchParams(window.location.search);
@@ -95,10 +91,14 @@ export default function CoeffRiskAnalyzer() {
       setAssets(n); 
   };
   
-  const addAsset = () => setAssets([...assets, { ticker: '', weight: 0 }]);
+  const addAsset = () => {
+      if (assets.length < MAX_ASSETS) {
+          setAssets([...assets, { ticker: '', weight: 0 }]);
+      }
+  };
+
   const removeAsset = (i) => setAssets(assets.filter((_, idx) => idx !== i));
 
-  // --- WALLET CONNECTION ---
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try { const a = await window.ethereum.request({ method: 'eth_requestAccounts' }); setWalletAddress(a[0]); } catch (e) { console.error(e); }
@@ -108,9 +108,44 @@ export default function CoeffRiskAnalyzer() {
     }
   };
 
+  const importFromWallet = async () => {
+      if (!walletAddress) {
+          await connectWallet();
+          return;
+      }
+      
+      setIsProcessing(true);
+      setTimeout(() => {
+          const simulatedHoldings = [
+              { ticker: "BTCUSD", value: 50000 },
+              { ticker: "ETHUSD", value: 30000 },
+              { ticker: "SOLUSD", value: 15000 },
+              { ticker: "XRPUSD", value: 8000 },
+              { ticker: "ADAUSD", value: 5000 },
+              { ticker: "DOTUSD", value: 2000 },
+              { ticker: "LINKUSD", value: 1000 },
+              { ticker: "DOGEUSD", value: 500 },
+              { ticker: "PEPEUSD", value: 10 }, 
+              { ticker: "SHIBUSD", value: 5 },  
+          ];
+
+          const sorted = simulatedHoldings.sort((a, b) => b.value - a.value).slice(0, MAX_ASSETS);
+          const meaningful = sorted.filter(item => item.value > 100);
+          const totalVal = meaningful.reduce((sum, item) => sum + item.value, 0);
+          
+          const normalizedAssets = meaningful.map(item => ({
+              ticker: item.ticker,
+              weight: Number(((item.value / totalVal) * 100).toFixed(1))
+          }));
+
+          setAssets(normalizedAssets);
+          setIsProcessing(false);
+          alert(`Imported ${normalizedAssets.length} crypto assets from wallet.\n\nYou have ${MAX_ASSETS - normalizedAssets.length} slots remaining.`);
+      }, 800);
+  };
+
   const formatAddress = (addr) => `${addr.substring(0, 5)}...${addr.substring(addr.length - 4)}`;
 
-  // --- LEAD CAPTURE ---
   const handleJoin = async (e) => {
     e.preventDefault();
     if (!email || !email.includes("@")) { alert("Invalid email."); return; }
@@ -127,7 +162,6 @@ export default function CoeffRiskAnalyzer() {
   };
 
   const handleExportPDF = () => window.print();
-  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
@@ -136,7 +170,9 @@ export default function CoeffRiskAnalyzer() {
 
   // --- ANALYSIS ENGINE ---
   const runAnalysis = async () => {
+    if (isWeightError) { alert("Total allocation cannot exceed 100%."); return; }
     if (!PROXY_URL && !apiKey) { alert("Missing API Key"); return; }
+    
     setIsProcessing(true);
     setResults(null);
     setDataQualityMsg("");
@@ -163,14 +199,26 @@ export default function CoeffRiskAnalyzer() {
       responses.forEach((res, i) => {
           const ticker = tickers[i];
           let hist = [];
-          if (res && res._warning) isUsingSynthetic = true;
+
+          // Check for Metadata (V16 Feature)
+          if (res && res.meta) {
+             if (res.meta.isSynthetic) isUsingSynthetic = true;
+             // Store Price & Currency
+             fetchedPrices[ticker] = {
+                 price: res.meta.currentPrice,
+                 currency: res.meta.currency
+             };
+          }
+
           if (res && Array.isArray(res)) hist = res; 
           else if (res && res.historical && Array.isArray(res.historical)) hist = res.historical;
           
           if (!hist || hist.length === 0) throw new Error(`No data for ${ticker}`);
 
-          const latestPoint = hist[0]; 
-          fetchedPrices[ticker] = latestPoint.close;
+          // Fallback if meta didn't exist (e.g., older worker or legacy response)
+          if (!fetchedPrices[ticker] && hist.length > 0) {
+               fetchedPrices[ticker] = { price: hist[0].close, currency: 'USD' };
+          }
 
           const map = new Map();
           const dates = new Set();
@@ -206,7 +254,6 @@ export default function CoeffRiskAnalyzer() {
           alignedReturns[t] = returns;
       });
 
-      // --- 1. CORRELATION MATRIX ---
       const matrix = [];
       assets.forEach(a1 => {
         const row = [];
@@ -217,7 +264,6 @@ export default function CoeffRiskAnalyzer() {
         matrix.push(row);
       });
 
-      // --- 2. PORTFOLIO RETURNS (WEIGHTED) ---
       const portfolioReturns = alignedReturns[tickers[0]].map((_, i) => {
         return assets.reduce((sum, asset) => {
           const r = alignedReturns[asset.ticker][i] || 0;
@@ -225,18 +271,18 @@ export default function CoeffRiskAnalyzer() {
         }, 0);
       });
       
-      // --- 3. BETA ---
       const benchRetStream = alignedReturns[benchmark];
       const correlationPM = getCorrelation(portfolioReturns, benchRetStream);
+      
       const stdDev = (arr) => {
           const mean = arr.reduce((a,b) => a+b, 0) / arr.length;
           return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
       };
+      
       const sigmaP = stdDev(portfolioReturns);
       const sigmaM = stdDev(benchRetStream);
       const beta = correlationPM * (sigmaP / sigmaM);
 
-      // --- 4. FRAGILITY SCORE (WEIGHTED + NON-LINEAR) ---
       let weightedSum = 0;
       let weightsSum = 0;
       let count = 0;
@@ -259,7 +305,6 @@ export default function CoeffRiskAnalyzer() {
       if (count === 0) avgCorr = 1; 
       else if (weightsSum > 0) avgCorr = weightedSum / weightsSum;
       
-      // Non-Linear Scaling: Sqrt(Corr) * 100
       const riskCurve = avgCorr > 0 ? Math.sqrt(avgCorr) : 0;
       const fragilityScore = Math.min(Math.max((riskCurve * 100), 0), 100).toFixed(0);
 
@@ -286,39 +331,19 @@ export default function CoeffRiskAnalyzer() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-400 font-sans selection:bg-indigo-500/30">
       
-      {/* PRINT STYLESHEET */}
       <style>{`
         @media print {
           @page { size: A4 portrait; margin: 5mm; }
-          body {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            background-color: #020617 !important;
-            color: #94a3b8 !important;
-            zoom: 0.65; 
-          }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #020617 !important; color: #94a3b8 !important; zoom: 0.65; }
           nav, button, .no-print { display: none !important; }
-          input {
-            display: block !important;
-            background-color: transparent !important;
-            border: none !important;
-            color: #cbd5e1 !important; 
-            padding: 0 !important;
-            font-weight: 600;
-          }
+          input { display: block !important; background-color: transparent !important; border: none !important; color: #cbd5e1 !important; padding: 0 !important; font-weight: 600; }
           .recharts-wrapper { background-color: #020617 !important; }
-          .bg-slate-950 {
-            background-color: #020617 !important;
-            border: 1px solid #1e293b !important;
-            break-inside: avoid;
-            margin-bottom: 1rem;
-          }
+          .bg-slate-950 { background-color: #020617 !important; border: 1px solid #1e293b !important; break-inside: avoid; margin-bottom: 1rem; }
           main { padding: 0 !important; margin: 0 !important; }
           .text-center.mb-12 { margin-bottom: 2rem !important; }
         }
       `}</style>
 
-      {/* HEADER */}
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -328,34 +353,9 @@ export default function CoeffRiskAnalyzer() {
             <span className="text-xl font-bold text-slate-100 tracking-tight">coeff.io</span>
           </div>
           <div className="hidden sm:flex items-center gap-3">
-             {!PROXY_URL && (
-                 <input 
-                   type="password" 
-                   placeholder="Dev Mode: API Key"
-                   value={apiKey}
-                   onChange={(e) => saveKey(e.target.value)}
-                   className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none"
-                 />
-             )}
-             
-             {PROXY_URL && (
-                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded">
-                    <Lock className="w-3 h-3 text-indigo-400" />
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span>
-                 </div>
-             )}
-
-             {walletAddress ? (
-                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-4 py-1.5 rounded-full text-xs font-mono">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    {formatAddress(walletAddress)}
-                 </div>
-             ) : (
-                 <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2">
-                   <Wallet className="w-4 h-4" />
-                   Connect Wallet
-                 </button>
-             )}
+             {!PROXY_URL && <input type="password" placeholder="Dev Mode: API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none" />}
+             {PROXY_URL && <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
+             {walletAddress ? <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>{formatAddress(walletAddress)}</div> : <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-2"><Wallet className="w-4 h-4" /> Connect Wallet</button>}
           </div>
         </div>
       </nav>
@@ -369,34 +369,55 @@ export default function CoeffRiskAnalyzer() {
             Most investors think they are diversified. The math says otherwise. 
             Calculate your <span className="text-slate-300 font-mono">Correlation Matrix</span> and <span className="text-slate-300 font-mono">Fragility Score</span> in seconds.
           </p>
-          {dataQualityMsg && (
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-900/20 border border-amber-900/50 text-amber-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  {dataQualityMsg}
-              </div>
-          )}
+          {dataQualityMsg && <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-900/20 border border-amber-900/50 text-amber-400 text-xs font-bold animate-in fade-in slide-in-from-top-2"><AlertTriangle className="w-4 h-4" />{dataQualityMsg}</div>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           <Card className="space-y-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Portfolio Composition</h3>
-              <button onClick={addAsset} className="text-indigo-400 hover:text-indigo-300">
-                <Plus className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] text-slate-500 font-mono mr-2">{assets.length}/{MAX_ASSETS}</span>
+                 <button onClick={importFromWallet} className="text-indigo-400 hover:text-indigo-300 p-1" title="Import from Wallet"><Import className="w-4 h-4" /></button>
+                 <button onClick={addAsset} disabled={isMaxAssets} className={`text-indigo-400 transition-colors ${isMaxAssets ? 'opacity-50 cursor-not-allowed' : 'hover:text-indigo-300'}`} title="Add Asset"><Plus className="w-4 h-4" /></button>
+              </div>
             </div>
             
+            <div className="flex gap-2 px-1 mb-1">
+                <span className="flex-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider pl-2">Asset</span>
+                <span className="w-24 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Last Price</span>
+                <span className="w-16 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right pr-2">Weight</span>
+                <span className="w-6"></span>
+            </div>
+
             <div className="space-y-3">
               {assets.map((asset, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input value={asset.ticker} onChange={(e) => updateAsset(i, 'ticker', e.target.value)} placeholder="Ticker" className="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-2 text-white text-sm font-mono uppercase focus:border-indigo-500 outline-none" />
-                  <div className="w-24 bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs font-mono text-right flex items-center justify-end">
-                      {latestPrices[asset.ticker] ? <span className="text-emerald-400 font-bold">${latestPrices[asset.ticker].toFixed(2)}</span> : <span className="text-slate-600">-</span>}
+                <div key={i} className="flex gap-2 items-center group">
+                  <input value={asset.ticker} onChange={(e) => updateAsset(i, 'ticker', e.target.value)} placeholder="TICKER" className="flex-[2] bg-slate-900 border border-slate-800 rounded px-3 py-2 text-white text-sm font-mono uppercase focus:border-indigo-500 outline-none min-w-0" />
+                  
+                  {/* UPDATED PRICE BOX: NOW DISPLAYS CURRENCY SYMBOL */}
+                  <div className="flex-[1.5] bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs font-mono text-right flex items-center justify-end min-w-[80px] overflow-hidden whitespace-nowrap">
+                      {latestPrices[asset.ticker] ? (
+                          <span className="text-emerald-400 font-bold truncate">
+                              {getCurrencySymbol(latestPrices[asset.ticker].currency)}
+                              {latestPrices[asset.ticker].price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </span>
+                      ) : (
+                          <span className="text-slate-600">-</span>
+                      )}
                   </div>
-                  <input type="number" value={asset.weight} onChange={(e) => updateAsset(i, 'weight', e.target.value)} placeholder="%" className="w-16 bg-slate-900 border border-slate-800 rounded px-3 py-2 text-white text-sm font-mono text-right focus:border-indigo-500 outline-none" />
-                  <button onClick={() => removeAsset(i)} className="text-slate-600 hover:text-rose-400 px-1"><Trash2 className="w-4 h-4" /></button>
+
+                  <input type="number" value={asset.weight} onChange={(e) => updateAsset(i, 'weight', e.target.value)} placeholder="%" className="w-14 bg-slate-900 border border-slate-800 rounded px-2 py-2 text-white text-sm font-mono text-right focus:border-indigo-500 outline-none" />
+                  <button onClick={() => removeAsset(i)} className="text-slate-600 hover:text-rose-400 px-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-2 px-2">
+                <span className="text-xs text-slate-500">Total Allocation:</span>
+                <span className={`text-xs font-mono font-bold ${isWeightError ? "text-rose-400" : totalWeight === 100 ? "text-emerald-400" : "text-amber-400"}`}>
+                    {totalWeight}%
+                </span>
             </div>
 
             <div className="pt-4 border-t border-slate-800">
@@ -404,9 +425,13 @@ export default function CoeffRiskAnalyzer() {
                 <span className="text-xs text-slate-500">BENCHMARK:</span>
                 <input value={benchmark} onChange={(e) => setBenchmark(e.target.value.toUpperCase())} className="bg-transparent border-b border-slate-700 w-16 text-xs text-slate-300 font-mono uppercase text-center" />
               </div>
-              <button onClick={runAnalysis} disabled={isProcessing} className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
-                {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
-                RUN DIAGNOSTIC
+              <button 
+                onClick={runAnalysis} 
+                disabled={isProcessing || isWeightError} 
+                className={`w-full font-bold py-3 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 ${isWeightError ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-indigo-500/20"}`}
+              >
+                {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : isWeightError ? <AlertTriangle className="w-4 h-4"/> : <Activity className="w-4 h-4" />}
+                {isWeightError ? "ADJUST WEIGHTS" : "RUN DIAGNOSTIC"}
               </button>
               {results && (
                 <div className="grid grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
@@ -441,19 +466,25 @@ export default function CoeffRiskAnalyzer() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h4>
-                  <div className="grid" style={{ gridTemplateColumns: `repeat(${assets.length}, 1fr)` }}>
-                    {results.matrix.map((row, i) => (
-                      row.map((val, j) => (
-                        <div key={`${i}-${j}`} className="aspect-square flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group" style={{ backgroundColor: getHeatmapColor(val) }}>
-                          <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100">{val.toFixed(2)}</span>
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
-                        </div>
-                      ))
-                    ))}
-                  </div>
-                  <div className="grid mt-1" style={{ gridTemplateColumns: `repeat(${assets.length}, 1fr)` }}>
+                  <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
+                    <div className="h-8"></div>
                     {assets.map(a => (
-                      <div key={a.ticker} className="text-center text-[9px] text-slate-500 font-mono">{a.ticker}</div>
+                      <div key={a.ticker} className="flex items-center justify-center text-[9px] font-mono text-slate-500 font-bold h-8">
+                        {a.ticker}
+                      </div>
+                    ))}
+                    {results.matrix.map((row, i) => (
+                      <React.Fragment key={i}>
+                        <div className="flex items-center justify-end pr-2 text-[9px] font-mono text-slate-500 font-bold h-10">
+                          {assets[i].ticker}
+                        </div>
+                        {row.map((val, j) => (
+                          <div key={`${i}-${j}`} className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" style={{ backgroundColor: getHeatmapColor(val) }}>
+                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">{val.toFixed(2)}</span>
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
+                          </div>
+                        ))}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
