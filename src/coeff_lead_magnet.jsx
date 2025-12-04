@@ -4,7 +4,7 @@ import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, La
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.22 (Feature: PWA Install Prompt)
+ * VERSION: Production v2.22 (Feature: PWA Install Prompt + Indigo Logo)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -13,15 +13,27 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-// --- BRAND ASSETS ---
-const CoeffLogo = ({ className = "w-6 h-6" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M7 17l10-10" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="7" cy="17" r="1.5" fill="#22d3ee" />
-    <circle cx="12" cy="12" r="1.5" fill="#22d3ee" />
-    <circle cx="17" cy="7" r="1.5" fill="#22d3ee" />
-    <circle cx="16" cy="14" r="1.2" fill="#f43f5e" />
+// --- BRAND ASSET: THE INDIGO ENGINE LOGO ---
+const CoeffLogo = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4f46e5" /> {/* Indigo 600 */}
+        <stop offset="1" stopColor="#1e1b4b" /> {/* Indigo 950 */}
+      </linearGradient>
+    </defs>
+    
+    {/* App Icon Container with Gradient */}
+    <rect width="40" height="40" rx="10" fill="url(#logoGradient)" />
+    
+    {/* The Correlation Link */}
+    <path d="M12 28L28 12" stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.5"/>
+    
+    {/* Asset A (Cyan - Tech/Cold) */}
+    <circle cx="12" cy="28" r="5" fill="#22d3ee" />
+    
+    {/* Asset B (Amber - Value/Hot) */}
+    <circle cx="28" cy="12" r="5" fill="#fbbf24" />
   </svg>
 );
 
@@ -101,6 +113,7 @@ export default function CoeffRiskAnalyzer() {
     }
   };
 
+  // --- KEY MANAGEMENT ---
   useEffect(() => {
     if (!PROXY_URL) {
         const params = new URLSearchParams(window.location.search);
@@ -190,6 +203,7 @@ export default function CoeffRiskAnalyzer() {
   };
 
   const handleExportPDF = () => window.print();
+  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
@@ -522,21 +536,35 @@ Analyze this data at https://coeff.io`;
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h4>
+                  
+                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
+                    
+                    {/* Header Row */}
                     <div className="h-8"></div>
                     {assets.map(a => (
                       <div key={a.ticker} className="flex items-center justify-center text-[9px] font-mono text-slate-500 font-bold h-8">
                         {a.ticker}
                       </div>
                     ))}
+
+                    {/* Data Rows */}
                     {results.matrix.map((row, i) => (
                       <React.Fragment key={i}>
+                        {/* Vertical Label */}
                         <div className="flex items-center justify-end pr-2 text-[9px] font-mono text-slate-500 font-bold h-10">
                           {assets[i].ticker}
                         </div>
+                        {/* Cells */}
                         {row.map((val, j) => (
-                          <div key={`${i}-${j}`} className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" style={{ backgroundColor: getHeatmapColor(val) }}>
-                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">{val.toFixed(2)}</span>
+                          <div 
+                            key={`${i}-${j}`} 
+                            className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" 
+                            style={{ backgroundColor: getHeatmapColor(val) }}
+                          >
+                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">
+                              {val.toFixed(2)}
+                            </span>
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
                           </div>
                         ))}
