@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. The Favicon (Browser Tab) -->
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <!-- 1. The Favicon (Browser Tab) with Cache Busting -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg?v=2" />
     
-    <!-- 2. The Apple Home Screen Icon (iPhone PWA) -->
-    <link rel="apple-touch-icon" href="/icon.svg" />
+    <!-- 2. The Apple Home Screen Icon (iPhone PWA) with Cache Busting -->
+    <link rel="apple-touch-icon" href="/icon.svg?v=2" />
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
@@ -20,13 +20,15 @@
     <meta property="og:url" content="https://coeff.io/" />
     <meta property="og:title" content="coeff.io | Quant Risk Scanner" />
     <meta property="og:description" content="Is your portfolio diversified or just correlated? Check your Fragility Score now." />
-    <meta property="og:image" content="https://coeff.io/icon.svg" />
+    
+    <!-- Note: WhatsApp prefers PNG. If SVG fails to render in chat, consider converting icon.svg to og-image.png later -->
+    <meta property="og:image" content="https://coeff.io/icon.svg?v=2" />
 
     <!-- 5. Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="coeff.io | Portfolio Fragility Score" />
     <meta name="twitter:description" content="Don't trade blind. See the hidden correlations in your portfolio." />
-    <meta name="twitter:image" content="https://coeff.io/icon.svg" />
+    <meta name="twitter:image" content="https://coeff.io/icon.svg?v=2" />
 
   </head>
   <body>
