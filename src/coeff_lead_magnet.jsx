@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, Copy } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, Copy, X } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.21 (Rebrand: "The Indigo Engine" Logo)
+ * VERSION: Production v2.22 (Feature: PWA Install Prompt)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -13,27 +13,15 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-// --- BRAND ASSET: THE INDIGO ENGINE LOGO ---
-const CoeffLogo = ({ className = "w-8 h-8" }) => (
-  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <defs>
-      <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#4f46e5" /> {/* Indigo 600 */}
-        <stop offset="1" stopColor="#1e1b4b" /> {/* Indigo 950 */}
-      </linearGradient>
-    </defs>
-    
-    {/* App Icon Container with Gradient */}
-    <rect width="40" height="40" rx="10" fill="url(#logoGradient)" />
-    
-    {/* The Correlation Link */}
-    <path d="M12 28L28 12" stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.5"/>
-    
-    {/* Asset A (Cyan - Tech/Cold) */}
-    <circle cx="12" cy="28" r="5" fill="#22d3ee" />
-    
-    {/* Asset B (Amber - Value/Hot) */}
-    <circle cx="28" cy="12" r="5" fill="#fbbf24" />
+// --- BRAND ASSETS ---
+const CoeffLogo = ({ className = "w-6 h-6" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M7 17l10-10" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
+    <circle cx="7" cy="17" r="1.5" fill="#22d3ee" />
+    <circle cx="12" cy="12" r="1.5" fill="#22d3ee" />
+    <circle cx="17" cy="7" r="1.5" fill="#22d3ee" />
+    <circle cx="16" cy="14" r="1.2" fill="#f43f5e" />
   </svg>
 );
 
@@ -81,10 +69,37 @@ export default function CoeffRiskAnalyzer() {
   const [dataQualityMsg, setDataQualityMsg] = useState("");
   const [latestPrices, setLatestPrices] = useState({}); 
   const [copyStatus, setCopyStatus] = useState("idle");
+  
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   const totalWeight = useMemo(() => assets.reduce((sum, a) => sum + (a.weight || 0), 0), [assets]);
   const isWeightError = totalWeight > 100;
   const isMaxAssets = assets.length >= MAX_ASSETS;
+
+  // --- PWA INSTALL HANDLER ---
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setShowInstallBanner(false);
+      setDeferredPrompt(null);
+    } else {
+      // iOS Fallback / Instructions
+      alert("To install on iPhone:\n1. Tap the 'Share' button below\n2. Scroll down and tap 'Add to Home Screen'");
+    }
+  };
 
   useEffect(() => {
     if (!PROXY_URL) {
@@ -397,7 +412,7 @@ Analyze this data at https://coeff.io`;
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-slate-900 p-1.5 rounded-lg border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+            <div className="bg-slate-900 p-2 rounded-xl border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
               <CoeffLogo className="w-8 h-8" />
             </div>
             <span className="text-xl font-bold text-slate-100 tracking-tight">coeff.io</span>
@@ -547,6 +562,26 @@ Analyze this data at https://coeff.io`;
               </form>
             )}
             {formStatus === "error" && <p className="text-xs text-rose-400 mt-2 flex items-center justify-center gap-1"><XCircle className="w-3 h-3" /> Something went wrong. Please try again.</p>}
+            
+            {/* INSTALL PROMPT (FIXED BOTTOM BANNER) */}
+            {showInstallBanner && (
+               <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500 p-4 z-50 animate-in slide-in-from-bottom">
+                   <div className="max-w-5xl mx-auto flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                           <div className="bg-indigo-500/20 p-2 rounded-lg"><CoeffLogo className="w-6 h-6" /></div>
+                           <div>
+                               <p className="text-sm font-bold text-white">Install coeff.io</p>
+                               <p className="text-xs text-slate-400">Add to home screen for full experience</p>
+                           </div>
+                       </div>
+                       <div className="flex items-center gap-3">
+                           <button onClick={() => setShowInstallBanner(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+                           <button onClick={handleInstallClick} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md text-xs font-bold">Install</button>
+                       </div>
+                   </div>
+               </div>
+            )}
+
             <div className="mt-6 flex justify-center gap-8 opacity-50 relative z-10">
                <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-slate-500" /><span className="text-xs">Institutional Encryption</span></div>
                <div className="flex items-center gap-2"><Activity className="w-4 h-4 text-slate-500" /><span className="text-xs">Real-Time Data</span></div>

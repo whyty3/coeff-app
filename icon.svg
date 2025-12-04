@@ -1,18 +1,21 @@
-<svg width="512" height="512" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background: Dark Slate (Matches App Theme) -->
-  <rect width="24" height="24" fill="#020617"/>
+<svg width="512" height="512" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- The Indigo Engine Gradient -->
+    <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5" /> <!-- Indigo 600 -->
+      <stop offset="1" stop-color="#1e1b4b" /> <!-- Indigo 950 -->
+    </linearGradient>
+  </defs>
+
+  <!-- Background Container -->
+  <rect width="40" height="40" rx="10" fill="url(#logoGradient)"/>
   
-  <!-- Structural Hexagon -->
-  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- The Correlation Link -->
+  <path d="M12 28L28 12" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-opacity="0.5"/>
   
-  <!-- The Regression Line (Electric Amber) -->
-  <path d="M7 17l10-10" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" />
+  <!-- Asset A (Cyan) -->
+  <circle cx="12" cy="28" r="5" fill="#22d3ee"/>
   
-  <!-- Data Points (Cyan) -->
-  <circle cx="7" cy="17" r="1" fill="#22d3ee" />
-  <circle cx="12" cy="12" r="1" fill="#22d3ee" />
-  <circle cx="17" cy="7" r="1" fill="#22d3ee" />
-  
-  <!-- Outlier (Rose) -->
-  <circle cx="16" cy="14" r="0.8" fill="#f43f5e" />
+  <!-- Asset B (Amber) -->
+  <circle cx="28" cy="12" r="5" fill="#fbbf24"/>
 </svg>
