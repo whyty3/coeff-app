@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, Copy } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.19 (Fix: Currency Display + Unbreakable Backend)
+ * VERSION: Production v2.19 (Features: Copy Data for Analysis)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -68,6 +68,9 @@ export default function CoeffRiskAnalyzer() {
   const [walletAddress, setWalletAddress] = useState("");
   const [dataQualityMsg, setDataQualityMsg] = useState("");
   const [latestPrices, setLatestPrices] = useState({}); 
+  
+  // New State for Copy Feedback
+  const [copyStatus, setCopyStatus] = useState("idle");
 
   const totalWeight = useMemo(() => assets.reduce((sum, a) => sum + (a.weight || 0), 0), [assets]);
   const isWeightError = totalWeight > 100;
@@ -162,10 +165,56 @@ export default function CoeffRiskAnalyzer() {
   };
 
   const handleExportPDF = () => window.print();
+  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://coeff.io`, '_blank');
+  };
+
+  // --- COPY DATA HANDLER ---
+  const handleCopyData = async () => {
+    if (!results) return;
+
+    // 1. Format Portfolio List
+    const portfolioStr = assets.map(a => {
+        const price = latestPrices[a.ticker];
+        const priceStr = price 
+            ? `${getCurrencySymbol(price.currency)}${price.price.toLocaleString('en-US', {minimumFractionDigits: 2})}` 
+            : "";
+        return `- ${a.ticker}: ${a.weight}% ${priceStr ? `(${priceStr})` : ''}`;
+    }).join("\n");
+
+    // 2. Format Matrix (Simple ASCII Table)
+    const tickers = assets.map(a => a.ticker);
+    // Create a header row: "      BTC   ETH   NVDA"
+    let matrixStr = "      " + tickers.map(t => t.substring(0,4).padEnd(6)).join(""); 
+    results.matrix.forEach((row, i) => {
+        // Create data rows: "BTC   1.00  0.85  0.45"
+        matrixStr += "\n" + tickers[i].substring(0,4).padEnd(6) + row.map(v => v.toFixed(2).padEnd(6)).join("");
+    });
+
+    const textToCopy = `coeff.io Risk Report
+
+⚠️ Fragility Score: ${results.fragilityScore}/100
+📈 Benchmark Beta: ${results.beta} (vs ${benchmark})
+
+PORTFOLIO:
+${portfolioStr}
+
+CORRELATION MATRIX:
+${matrixStr}
+
+Analyze this data at https://coeff.io`;
+
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        setCopyStatus("copied");
+        setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch (err) {
+        console.error("Copy failed", err);
+        alert("Failed to copy to clipboard");
+    }
   };
 
   // --- ANALYSIS ENGINE ---
@@ -203,7 +252,6 @@ export default function CoeffRiskAnalyzer() {
           // Check for Metadata (V16 Feature)
           if (res && res.meta) {
              if (res.meta.isSynthetic) isUsingSynthetic = true;
-             // Store Price & Currency
              fetchedPrices[ticker] = {
                  price: res.meta.currentPrice,
                  currency: res.meta.currency
@@ -215,7 +263,6 @@ export default function CoeffRiskAnalyzer() {
           
           if (!hist || hist.length === 0) throw new Error(`No data for ${ticker}`);
 
-          // Fallback if meta didn't exist (e.g., older worker or legacy response)
           if (!fetchedPrices[ticker] && hist.length > 0) {
                fetchedPrices[ticker] = { price: hist[0].close, currency: 'USD' };
           }
@@ -394,19 +441,9 @@ export default function CoeffRiskAnalyzer() {
               {assets.map((asset, i) => (
                 <div key={i} className="flex gap-2 items-center group">
                   <input value={asset.ticker} onChange={(e) => updateAsset(i, 'ticker', e.target.value)} placeholder="TICKER" className="flex-[2] bg-slate-900 border border-slate-800 rounded px-3 py-2 text-white text-sm font-mono uppercase focus:border-indigo-500 outline-none min-w-0" />
-                  
-                  {/* UPDATED PRICE BOX: NOW DISPLAYS CURRENCY SYMBOL */}
                   <div className="flex-[1.5] bg-slate-950 border border-slate-800 rounded px-2 py-2 text-xs font-mono text-right flex items-center justify-end min-w-[80px] overflow-hidden whitespace-nowrap">
-                      {latestPrices[asset.ticker] ? (
-                          <span className="text-emerald-400 font-bold truncate">
-                              {getCurrencySymbol(latestPrices[asset.ticker].currency)}
-                              {latestPrices[asset.ticker].price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </span>
-                      ) : (
-                          <span className="text-slate-600">-</span>
-                      )}
+                      {latestPrices[asset.ticker] ? <span className="text-emerald-400 font-bold truncate">{getCurrencySymbol(latestPrices[asset.ticker].currency)}{latestPrices[asset.ticker].price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> : <span className="text-slate-600">-</span>}
                   </div>
-
                   <input type="number" value={asset.weight} onChange={(e) => updateAsset(i, 'weight', e.target.value)} placeholder="%" className="w-14 bg-slate-900 border border-slate-800 rounded px-2 py-2 text-white text-sm font-mono text-right focus:border-indigo-500 outline-none" />
                   <button onClick={() => removeAsset(i)} className="text-slate-600 hover:text-rose-400 px-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
                 </div>
@@ -434,9 +471,18 @@ export default function CoeffRiskAnalyzer() {
                 {isWeightError ? "ADJUST WEIGHTS" : "RUN DIAGNOSTIC"}
               </button>
               {results && (
-                <div className="grid grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
+                <div className="grid grid-cols-3 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
                     <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
                     <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
+                    
+                    {/* NEW COPY BUTTON */}
+                    <button 
+                        onClick={handleCopyData} 
+                        className={`flex items-center justify-center gap-2 border transition-colors py-2 rounded-md text-xs font-bold uppercase ${copyStatus === "copied" ? "bg-emerald-900 border-emerald-700 text-emerald-400" : "bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300"}`}
+                    >
+                        {copyStatus === "copied" ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copyStatus === "copied" ? "Copied" : "Copy Data"}
+                    </button>
                 </div>
               )}
             </div>
@@ -466,21 +512,35 @@ export default function CoeffRiskAnalyzer() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h4>
+                  
+                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
+                    
+                    {/* Header Row */}
                     <div className="h-8"></div>
                     {assets.map(a => (
                       <div key={a.ticker} className="flex items-center justify-center text-[9px] font-mono text-slate-500 font-bold h-8">
                         {a.ticker}
                       </div>
                     ))}
+
+                    {/* Data Rows */}
                     {results.matrix.map((row, i) => (
                       <React.Fragment key={i}>
+                        {/* Vertical Label */}
                         <div className="flex items-center justify-end pr-2 text-[9px] font-mono text-slate-500 font-bold h-10">
                           {assets[i].ticker}
                         </div>
+                        {/* Cells */}
                         {row.map((val, j) => (
-                          <div key={`${i}-${j}`} className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" style={{ backgroundColor: getHeatmapColor(val) }}>
-                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">{val.toFixed(2)}</span>
+                          <div 
+                            key={`${i}-${j}`} 
+                            className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" 
+                            style={{ backgroundColor: getHeatmapColor(val) }}
+                          >
+                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">
+                              {val.toFixed(2)}
+                            </span>
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
                           </div>
                         ))}
