@@ -3,28 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- 1. The Favicon (Browser Tab) with Cache Busting -->
-    <link rel="icon" type="image/svg+xml" href="/icon.svg?v=2" />
+    <!-- 1. Link the Manifest (The PWA Configuration File) -->
+    <link rel="manifest" href="/manifest.json" />
     
-    <!-- 2. The Apple Home Screen Icon (iPhone PWA) with Cache Busting -->
+    <!-- Icons with Cache Busting -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg?v=2" />
     <link rel="apple-touch-icon" href="/icon.svg?v=2" />
+    
+    <!-- Theme Color (Matches Slate-950) -->
+    <meta name="theme-color" content="#020617" />
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- 3. SEO & Social Metadata -->
+    <!-- SEO & Social Metadata -->
     <title>coeff.io | Portfolio Risk Scanner</title>
     <meta name="description" content="Institutional-grade portfolio risk analysis. Calculate correlation matrices, fragility scores, and beta in real-time." />
     
-    <!-- 4. Open Graph (WhatsApp / LinkedIn Previews) -->
+    <!-- Open Graph (Social Previews) -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://coeff.io/" />
     <meta property="og:title" content="coeff.io | Quant Risk Scanner" />
     <meta property="og:description" content="Is your portfolio diversified or just correlated? Check your Fragility Score now." />
-    
-    <!-- Note: WhatsApp prefers PNG. If SVG fails to render in chat, consider converting icon.svg to og-image.png later -->
     <meta property="og:image" content="https://coeff.io/icon.svg?v=2" />
 
-    <!-- 5. Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="coeff.io | Portfolio Fragility Score" />
     <meta name="twitter:description" content="Don't trade blind. See the hidden correlations in your portfolio." />
@@ -33,7 +34,21 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Standard Vite Entry Point -->
+    
+    <!-- 2. Register the Service Worker (Critical for Android Install) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          try {
+            navigator.serviceWorker.register('/sw.js');
+          } catch (e) {
+            // Suppress the error in the development/blob environment
+            console.warn("Service Worker registration failed (common in dev/blob environment):", e);
+          }
+        });
+      }
+    </script>
+    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
