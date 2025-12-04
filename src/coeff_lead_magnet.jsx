@@ -4,7 +4,7 @@ import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, La
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.19 (Features: Copy Data for Analysis)
+ * VERSION: Production v2.21 (Rebrand: "The Indigo Engine" Logo)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -13,15 +13,27 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-// --- BRAND ASSETS ---
-const CoeffLogo = ({ className = "w-6 h-6" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M7 17l10-10" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="7" cy="17" r="1.5" fill="#22d3ee" />
-    <circle cx="12" cy="12" r="1.5" fill="#22d3ee" />
-    <circle cx="17" cy="7" r="1.5" fill="#22d3ee" />
-    <circle cx="16" cy="14" r="1.2" fill="#f43f5e" />
+// --- BRAND ASSET: THE INDIGO ENGINE LOGO ---
+const CoeffLogo = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4f46e5" /> {/* Indigo 600 */}
+        <stop offset="1" stopColor="#1e1b4b" /> {/* Indigo 950 */}
+      </linearGradient>
+    </defs>
+    
+    {/* App Icon Container with Gradient */}
+    <rect width="40" height="40" rx="10" fill="url(#logoGradient)" />
+    
+    {/* The Correlation Link */}
+    <path d="M12 28L28 12" stroke="#94a3b8" strokeWidth="4" strokeLinecap="round" strokeOpacity="0.5"/>
+    
+    {/* Asset A (Cyan - Tech/Cold) */}
+    <circle cx="12" cy="28" r="5" fill="#22d3ee" />
+    
+    {/* Asset B (Amber - Value/Hot) */}
+    <circle cx="28" cy="12" r="5" fill="#fbbf24" />
   </svg>
 );
 
@@ -68,8 +80,6 @@ export default function CoeffRiskAnalyzer() {
   const [walletAddress, setWalletAddress] = useState("");
   const [dataQualityMsg, setDataQualityMsg] = useState("");
   const [latestPrices, setLatestPrices] = useState({}); 
-  
-  // New State for Copy Feedback
   const [copyStatus, setCopyStatus] = useState("idle");
 
   const totalWeight = useMemo(() => assets.reduce((sum, a) => sum + (a.weight || 0), 0), [assets]);
@@ -165,18 +175,15 @@ export default function CoeffRiskAnalyzer() {
   };
 
   const handleExportPDF = () => window.print();
-  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://coeff.io`, '_blank');
   };
 
-  // --- COPY DATA HANDLER ---
   const handleCopyData = async () => {
     if (!results) return;
 
-    // 1. Format Portfolio List
     const portfolioStr = assets.map(a => {
         const price = latestPrices[a.ticker];
         const priceStr = price 
@@ -185,12 +192,9 @@ export default function CoeffRiskAnalyzer() {
         return `- ${a.ticker}: ${a.weight}% ${priceStr ? `(${priceStr})` : ''}`;
     }).join("\n");
 
-    // 2. Format Matrix (Simple ASCII Table)
     const tickers = assets.map(a => a.ticker);
-    // Create a header row: "      BTC   ETH   NVDA"
     let matrixStr = "      " + tickers.map(t => t.substring(0,4).padEnd(6)).join(""); 
     results.matrix.forEach((row, i) => {
-        // Create data rows: "BTC   1.00  0.85  0.45"
         matrixStr += "\n" + tickers[i].substring(0,4).padEnd(6) + row.map(v => v.toFixed(2).padEnd(6)).join("");
     });
 
@@ -249,7 +253,6 @@ Analyze this data at https://coeff.io`;
           const ticker = tickers[i];
           let hist = [];
 
-          // Check for Metadata (V16 Feature)
           if (res && res.meta) {
              if (res.meta.isSynthetic) isUsingSynthetic = true;
              fetchedPrices[ticker] = {
@@ -394,7 +397,7 @@ Analyze this data at https://coeff.io`;
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-slate-900 p-2 rounded-xl border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+            <div className="bg-slate-900 p-1.5 rounded-lg border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
               <CoeffLogo className="w-8 h-8" />
             </div>
             <span className="text-xl font-bold text-slate-100 tracking-tight">coeff.io</span>
@@ -474,15 +477,7 @@ Analyze this data at https://coeff.io`;
                 <div className="grid grid-cols-3 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
                     <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
                     <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
-                    
-                    {/* NEW COPY BUTTON */}
-                    <button 
-                        onClick={handleCopyData} 
-                        className={`flex items-center justify-center gap-2 border transition-colors py-2 rounded-md text-xs font-bold uppercase ${copyStatus === "copied" ? "bg-emerald-900 border-emerald-700 text-emerald-400" : "bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300"}`}
-                    >
-                        {copyStatus === "copied" ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        {copyStatus === "copied" ? "Copied" : "Copy Data"}
-                    </button>
+                    <button onClick={handleCopyData} className={`flex items-center justify-center gap-2 border transition-colors py-2 rounded-md text-xs font-bold uppercase ${copyStatus === "copied" ? "bg-emerald-900 border-emerald-700 text-emerald-400" : "bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-300"}`}>{copyStatus === "copied" ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}{copyStatus === "copied" ? "Copied" : "Copy Data"}</button>
                 </div>
               )}
             </div>
@@ -512,35 +507,21 @@ Analyze this data at https://coeff.io`;
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h4>
-                  
-                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
-                    
-                    {/* Header Row */}
                     <div className="h-8"></div>
                     {assets.map(a => (
                       <div key={a.ticker} className="flex items-center justify-center text-[9px] font-mono text-slate-500 font-bold h-8">
                         {a.ticker}
                       </div>
                     ))}
-
-                    {/* Data Rows */}
                     {results.matrix.map((row, i) => (
                       <React.Fragment key={i}>
-                        {/* Vertical Label */}
                         <div className="flex items-center justify-end pr-2 text-[9px] font-mono text-slate-500 font-bold h-10">
                           {assets[i].ticker}
                         </div>
-                        {/* Cells */}
                         {row.map((val, j) => (
-                          <div 
-                            key={`${i}-${j}`} 
-                            className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" 
-                            style={{ backgroundColor: getHeatmapColor(val) }}
-                          >
-                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">
-                              {val.toFixed(2)}
-                            </span>
+                          <div key={`${i}-${j}`} className="h-10 flex items-center justify-center text-[10px] font-mono border border-slate-900/50 relative group transition-all hover:scale-105 hover:z-10 hover:border-slate-700" style={{ backgroundColor: getHeatmapColor(val) }}>
+                            <span className="relative z-10 text-white drop-shadow-md opacity-80 group-hover:opacity-100 font-bold">{val.toFixed(2)}</span>
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" title={`${assets[i].ticker} vs ${assets[j].ticker}`} />
                           </div>
                         ))}
