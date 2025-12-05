@@ -4,7 +4,7 @@ import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, La
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v3.13 (Final Gold Master: All Features + Catchy Text + Correct Logo)
+ * VERSION: Production v3.15 (Final Polish: Catchy Text Restored + Mobile UI Fixes)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -14,7 +14,7 @@ const Card = ({ children, className = "" }) => (
 );
 
 // --- BRAND ASSETS ---
-// High Contrast "Regression Mark" with Purple Gradient Background
+// CORRECT LOGO: High Contrast "Regression Mark" with Purple Gradient Background
 const CoeffLogo = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
@@ -346,17 +346,30 @@ export default function CoeffRiskAnalyzer() {
             </div>
             <span className="text-xl font-bold text-slate-100 tracking-tight">coeff.io</span>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
-             {!PROXY_URL && <input type="password" placeholder="Dev Mode: API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none" />}
-             {PROXY_URL && <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
-             {walletAddress ? <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>{formatAddress(walletAddress)}</div> : <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors flex items-center gap-2"><Wallet className="w-4 h-4" /><span className="hidden sm:inline">Connect Wallet</span><span className="sm:hidden">Connect</span></button>}
+          <div className="flex items-center gap-3">
+             {!PROXY_URL && <input type="password" placeholder="Dev Mode: API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none hidden sm:block" />}
+             {PROXY_URL && <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
+             
+             {/* WALLET BUTTON: VISIBLE ON MOBILE */}
+             {walletAddress ? (
+                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    {formatAddress(walletAddress)}
+                 </div>
+             ) : (
+                 <button onClick={connectWallet} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors flex items-center gap-2">
+                   <Wallet className="w-4 h-4" />
+                   <span className="hidden sm:inline">Connect Wallet</span>
+                   <span className="sm:hidden">Connect</span>
+                 </button>
+             )}
           </div>
         </div>
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          {/* H1 Header: CATCHY COPY Restored */}
+          {/* CATCHY HERO TEXT RESTORED */}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             How fragile is your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">portfolio?</span>
           </h1>
@@ -394,7 +407,8 @@ export default function CoeffRiskAnalyzer() {
                       {latestPrices[asset.ticker] ? <span className="text-emerald-400 font-bold truncate">{getCurrencySymbol(latestPrices[asset.ticker].currency)}{latestPrices[asset.ticker].price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> : <span className="text-slate-600">-</span>}
                   </div>
                   <input type="number" value={asset.weight} onChange={(e) => updateAsset(i, 'weight', e.target.value)} placeholder="%" className="w-14 bg-slate-900 border border-slate-800 rounded px-2 py-2 text-white text-sm font-mono text-right focus:border-indigo-500 outline-none" />
-                  <button onClick={() => removeAsset(i)} className="text-slate-600 hover:text-rose-400 px-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
+                  {/* TRASH BUTTON: Forced Visibility on Mobile (removed group-hover dependency for touch screens) */}
+                  <button onClick={() => removeAsset(i)} className="text-slate-600 hover:text-rose-400 px-1 transition-colors"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
             </div>
