@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, BookOpen } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, BookOpen, FileDown } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v2.20 (SEO Optimization + Methodology Section)
+ * VERSION: Production v3.9 (Final: Catchy Hero Text + All Features)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -14,14 +14,22 @@ const Card = ({ children, className = "" }) => (
 );
 
 // --- BRAND ASSETS ---
-const CoeffLogo = ({ className = "w-6 h-6" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#94a3b8" strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M7 17l10-10" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="7" cy="17" r="1.5" fill="#22d3ee" />
-    <circle cx="12" cy="12" r="1.5" fill="#22d3ee" />
-    <circle cx="17" cy="7" r="1.5" fill="#22d3ee" />
-    <circle cx="16" cy="14" r="1.2" fill="#f43f5e" />
+// CORRECT LOGO: High Contrast "Regression Mark" with Purple Gradient Background
+const CoeffLogo = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#4f46e5" />
+        <stop offset="1" stopColor="#1e1b4b" />
+      </linearGradient>
+    </defs>
+    <rect width="40" height="40" rx="10" fill="url(#logoGradient)"/>
+    <path d="M10 10L30 30M10 30L30 10" stroke="#94a3b8" strokeWidth="2" strokeOpacity="0.3" strokeLinecap="round"/>
+    <path d="M10 30L30 10" stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" />
+    <circle cx="10" cy="30" r="3" fill="#22d3ee" />
+    <circle cx="20" cy="20" r="3" fill="#22d3ee" />
+    <circle cx="30" cy="10" r="3" fill="#22d3ee" />
+    <circle cx="28" cy="28" r="2.5" fill="#f43f5e" />
   </svg>
 );
 
@@ -73,6 +81,7 @@ export default function CoeffRiskAnalyzer() {
   const isWeightError = totalWeight > 100;
   const isMaxAssets = assets.length >= MAX_ASSETS;
 
+  // --- KEY MANAGEMENT ---
   useEffect(() => {
     if (!PROXY_URL) {
         const params = new URLSearchParams(window.location.search);
@@ -99,6 +108,7 @@ export default function CoeffRiskAnalyzer() {
 
   const removeAsset = (i) => setAssets(assets.filter((_, idx) => idx !== i));
 
+  // --- WALLET CONNECTION ---
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try { const a = await window.ethereum.request({ method: 'eth_requestAccounts' }); setWalletAddress(a[0]); } catch (e) { console.error(e); }
@@ -122,14 +132,16 @@ export default function CoeffRiskAnalyzer() {
           const meaningful = sorted.filter(item => item.value > 100);
           const totalVal = meaningful.reduce((sum, item) => sum + item.value, 0);
           const normalizedAssets = meaningful.map(item => ({ ticker: item.ticker, weight: Number(((item.value / totalVal) * 100).toFixed(1)) }));
+          
           setAssets(normalizedAssets);
           setIsProcessing(false);
-          alert(`Imported ${normalizedAssets.length} crypto assets. You have ${MAX_ASSETS - normalizedAssets.length} slots remaining.`);
+          alert(`Imported ${normalizedAssets.length} crypto assets from wallet.\n\nYou have ${MAX_ASSETS - normalizedAssets.length} slots remaining.`);
       }, 800);
   };
 
   const formatAddress = (addr) => `${addr.substring(0, 5)}...${addr.substring(addr.length - 4)}`;
 
+  // --- LEAD CAPTURE ---
   const handleJoin = async (e) => {
     e.preventDefault();
     if (!email || !email.includes("@")) { alert("Invalid email."); return; }
@@ -145,11 +157,45 @@ export default function CoeffRiskAnalyzer() {
     } catch { setFormStatus("error"); }
   };
 
+  // --- SHARE & EXPORT ---
   const handleExportPDF = () => window.print();
+  
   const handleShareTwitter = () => {
     if (!results) return;
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://coeff.io`, '_blank');
+  };
+
+  // NEW: Text Export for WhatsApp
+  const handleExportText = () => {
+    if (!results) return;
+    
+    const date = new Date().toLocaleDateString();
+    let report = `coeff.io Risk Report (${date})\n`;
+    report += `---------------------------\n`;
+    report += `Fragility Score: ${results.fragilityScore}/100\n`;
+    report += `Benchmark Beta: ${results.beta} (vs ${benchmark})\n`;
+    report += `Avg Correlation: ${results.avgCorr}\n\n`;
+    
+    report += `Portfolio Composition:\n`;
+    assets.forEach(a => {
+       const priceInfo = latestPrices[a.ticker] 
+          ? `${getCurrencySymbol(latestPrices[a.ticker].currency)}${latestPrices[a.ticker].price}` 
+          : 'N/A';
+       report += `- ${a.ticker}: ${a.weight}% (${priceInfo})\n`;
+    });
+    
+    report += `\nGenerated by https://coeff.io`;
+
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `risk_report_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // --- ANALYSIS ENGINE ---
@@ -166,6 +212,7 @@ export default function CoeffRiskAnalyzer() {
       });
       
       const responses = await Promise.all(requests);
+      
       const priceMaps = {};
       let commonDates = new Set();
       let firstPass = true;
@@ -212,6 +259,7 @@ export default function CoeffRiskAnalyzer() {
           alignedReturns[t] = returns;
       });
 
+      // 1. Correlation Matrix
       const matrix = [];
       assets.forEach(a1 => {
         const row = [];
@@ -222,6 +270,7 @@ export default function CoeffRiskAnalyzer() {
         matrix.push(row);
       });
 
+      // 2. Portfolio Returns
       const portfolioReturns = alignedReturns[tickers[0]].map((_, i) => {
         return assets.reduce((sum, asset) => {
           const r = alignedReturns[asset.ticker][i] || 0;
@@ -229,6 +278,7 @@ export default function CoeffRiskAnalyzer() {
         }, 0);
       });
       
+      // 3. Beta
       const benchRetStream = alignedReturns[benchmark];
       const correlationPM = getCorrelation(portfolioReturns, benchRetStream);
       const stdDev = (arr) => {
@@ -239,6 +289,7 @@ export default function CoeffRiskAnalyzer() {
       const sigmaM = stdDev(benchRetStream);
       const beta = correlationPM * (sigmaP / sigmaM);
 
+      // 4. Weighted Fragility Score
       let weightedSum = 0;
       let weightsSum = 0;
       let count = 0;
@@ -271,7 +322,19 @@ export default function CoeffRiskAnalyzer() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-400 font-sans selection:bg-indigo-500/30">
-      <style>{`@media print { @page { size: A4 portrait; margin: 5mm; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #020617 !important; color: #94a3b8 !important; zoom: 0.65; } nav, button, .no-print { display: none !important; } input { display: block !important; background-color: transparent !important; border: none !important; color: #cbd5e1 !important; padding: 0 !important; font-weight: 600; } .recharts-wrapper { background-color: #020617 !important; } .bg-slate-950 { background-color: #020617 !important; border: 1px solid #1e293b !important; break-inside: avoid; margin-bottom: 1rem; } main { padding: 0 !important; margin: 0 !important; } .text-center.mb-12 { margin-bottom: 2rem !important; } }`}</style>
+      
+      <style>{`
+        @media print {
+          @page { size: A4 portrait; margin: 5mm; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #020617 !important; color: #94a3b8 !important; zoom: 0.65; }
+          nav, button, .no-print { display: none !important; }
+          input { display: block !important; background-color: transparent !important; border: none !important; color: #cbd5e1 !important; padding: 0 !important; font-weight: 600; }
+          .recharts-wrapper { background-color: #020617 !important; }
+          .bg-slate-950 { background-color: #020617 !important; border: 1px solid #1e293b !important; break-inside: avoid; margin-bottom: 1rem; }
+          main { padding: 0 !important; margin: 0 !important; }
+          .text-center.mb-12 { margin-bottom: 2rem !important; }
+        }
+      `}</style>
 
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -291,12 +354,13 @@ export default function CoeffRiskAnalyzer() {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          {/* H1: Primary Keyword Targeting */}
+          {/* H1 Header: Catchy Copy Restored */}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-            Portfolio Risk Scanner | <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Fragility Score</span>
+            How fragile is your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">portfolio?</span>
           </h1>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Calculate your <strong>Correlation Matrix</strong>, <strong>Systematic Beta</strong>, and real-time diversification risk in seconds.
+            Most investors think their portfolio is robust. The math says different.
+            <br/><span className="text-sm text-slate-600">Calculate your Correlation Matrix and Fragility Score in seconds.</span>
           </p>
           {dataQualityMsg && <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-900/20 border border-amber-900/50 text-amber-400 text-xs font-bold animate-in fade-in slide-in-from-top-2"><AlertTriangle className="w-4 h-4" />{dataQualityMsg}</div>}
         </div>
@@ -304,7 +368,6 @@ export default function CoeffRiskAnalyzer() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           <Card className="space-y-4">
             <div className="flex justify-between items-center mb-2">
-              {/* H2: Semantic Structure for Inputs */}
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Portfolio Composition</h2>
               <div className="flex items-center gap-2">
                  <span className="text-[10px] text-slate-500 font-mono mr-2">{assets.length}/{MAX_ASSETS}</span>
@@ -313,6 +376,7 @@ export default function CoeffRiskAnalyzer() {
               </div>
             </div>
             
+            {/* Column Headers */}
             <div className="flex gap-2 px-1 mb-1">
                 <span className="flex-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider pl-2">Asset</span>
                 <span className="w-24 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Last Price</span>
@@ -346,10 +410,16 @@ export default function CoeffRiskAnalyzer() {
                 <input value={benchmark} onChange={(e) => setBenchmark(e.target.value.toUpperCase())} className="bg-transparent border-b border-slate-700 w-16 text-xs text-slate-300 font-mono uppercase text-center" />
               </div>
               <button onClick={runAnalysis} disabled={isProcessing || isWeightError} className={`w-full font-bold py-3 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 ${isWeightError ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-indigo-500/20"}`}>{isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : isWeightError ? <AlertTriangle className="w-4 h-4"/> : <Activity className="w-4 h-4" />}{isWeightError ? "ADJUST WEIGHTS" : "RUN DIAGNOSTIC"}</button>
+              
+              {/* EXPORT, DOWNLOAD & SHARE BUTTONS (3 Buttons Confirmed) */}
               {results && (
-                <div className="grid grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
-                    <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
-                    <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-xs font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
+                <div className="grid grid-cols-3 gap-2 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
+                    <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
+                    
+                    {/* TEXT EXPORT BUTTON */}
+                    <button onClick={handleExportText} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileDown className="w-3 h-3" /> Export Data</button>
+                    
+                    <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
                 </div>
               )}
             </div>
@@ -379,6 +449,8 @@ export default function CoeffRiskAnalyzer() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h2>
+                  
+                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
                     <div className="h-8"></div>
                     {assets.map(a => (
@@ -406,7 +478,7 @@ export default function CoeffRiskAnalyzer() {
           </Card>
         </div>
 
-        {/* SEO & METHODOLOGY SECTION (New Card for Content Marketing) */}
+        {/* SEO & METHODOLOGY SECTION (Restored) */}
         <article className="bg-slate-950 border border-slate-800 rounded-lg p-8 mb-12">
             <div className="flex items-center gap-2 mb-4">
                 <BookOpen className="w-5 h-5 text-indigo-400" />
