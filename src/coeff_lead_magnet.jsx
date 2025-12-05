@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, BookOpen, FileDown, Smartphone, X } from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, Layers, Lock, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Wallet, FileText, Database, Import, BookOpen, FileDown, Smartphone, X, Menu } from 'lucide-react';
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v3.20 (Final: 3 Export Buttons + Mobile Optimized)
+ * VERSION: Production v3.21 (Mobile UX: Export Modal with Close Button)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -76,11 +76,13 @@ export default function CoeffRiskAnalyzer() {
   const [dataQualityMsg, setDataQualityMsg] = useState("");
   const [latestPrices, setLatestPrices] = useState({}); 
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false); // NEW: Mobile Menu State
 
   const totalWeight = useMemo(() => assets.reduce((sum, a) => sum + (a.weight || 0), 0), [assets]);
   const isWeightError = totalWeight > 100;
   const isMaxAssets = assets.length >= MAX_ASSETS;
 
+  // --- KEY MANAGEMENT ---
   useEffect(() => {
     if (!PROXY_URL) {
         const params = new URLSearchParams(window.location.search);
@@ -107,6 +109,7 @@ export default function CoeffRiskAnalyzer() {
 
   const removeAsset = (i) => setAssets(assets.filter((_, idx) => idx !== i));
 
+  // --- WALLET CONNECTION ---
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try { const a = await window.ethereum.request({ method: 'eth_requestAccounts' }); setWalletAddress(a[0]); } catch (e) { console.error(e); }
@@ -139,6 +142,7 @@ export default function CoeffRiskAnalyzer() {
 
   const formatAddress = (addr) => `${addr.substring(0, 5)}...${addr.substring(addr.length - 4)}`;
 
+  // --- LEAD CAPTURE ---
   const handleJoin = async (e) => {
     e.preventDefault();
     if (!email || !email.includes("@")) { alert("Invalid email."); return; }
@@ -154,17 +158,22 @@ export default function CoeffRiskAnalyzer() {
     } catch { setFormStatus("error"); }
   };
 
-  // --- EXPORT ACTIONS ---
-  const handleExportPDF = () => window.print();
+  // --- SHARE & EXPORT ---
+  const handleExportPDF = () => {
+      setShowMobileMenu(false); // Close modal if open
+      window.print();
+  };
   
   const handleShareTwitter = () => {
     if (!results) return;
+    setShowMobileMenu(false);
     const text = `My Portfolio Fragility Score: ${results.fragilityScore}/100 🚨\nBenchmark Beta: ${results.beta}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://coeff.io`, '_blank');
   };
 
   const handleExportText = () => {
     if (!results) return;
+    setShowMobileMenu(false);
     
     const date = new Date().toLocaleDateString();
     let report = `coeff.io Risk Report (${date})\n`;
@@ -344,11 +353,11 @@ export default function CoeffRiskAnalyzer() {
              {!PROXY_URL && <input type="password" placeholder="Dev Mode: API Key" value={apiKey} onChange={(e) => saveKey(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs w-32 focus:w-48 transition-all outline-none hidden sm:block" />}
              {PROXY_URL && <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/20 border border-indigo-900/50 rounded"><Lock className="w-3 h-3 text-indigo-400" /><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Secure</span></div>}
              
-             {/* MOBILE INSTALL BUTTON */}
+             {/* MOBILE: Install + Wallet */}
              <button onClick={() => setShowInstallModal(true)} className="sm:hidden bg-slate-800 text-indigo-400 p-2 rounded-md border border-slate-700"><Smartphone className="w-4 h-4" /></button>
              
              {walletAddress ? (
-                 <div className="hidden sm:flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono">
+                 <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full text-xs font-mono">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                     {formatAddress(walletAddress)}
                  </div>
@@ -365,7 +374,7 @@ export default function CoeffRiskAnalyzer() {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         
-        {/* INSTALL PROMPT MODAL */}
+        {/* MOBILE INSTALL MODAL */}
         {showInstallModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95">
@@ -381,6 +390,23 @@ export default function CoeffRiskAnalyzer() {
                         <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
                     </ol>
                     <button onClick={() => setShowInstallModal(false)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-bold">Got it</button>
+                </div>
+            </div>
+        )}
+
+        {/* MOBILE ACTIONS MENU (NEW!) */}
+        {showMobileMenu && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 backdrop-blur-sm sm:hidden animate-in fade-in">
+                <div className="bg-slate-900 border-t border-slate-700 w-full rounded-t-2xl p-6 shadow-2xl animate-in slide-in-from-bottom">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-white">Export Results</h3>
+                        <button onClick={() => setShowMobileMenu(false)} className="bg-slate-800 p-2 rounded-full text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="space-y-3">
+                        <button onClick={handleExportPDF} className="w-full flex items-center justify-center gap-3 bg-slate-800 text-slate-200 py-4 rounded-xl font-bold"><FileText className="w-5 h-5" /> Save as PDF</button>
+                        <button onClick={handleExportText} className="w-full flex items-center justify-center gap-3 bg-slate-800 text-emerald-400 py-4 rounded-xl font-bold"><FileDown className="w-5 h-5" /> Download Data (Txt)</button>
+                        <button onClick={handleShareTwitter} className="w-full flex items-center justify-center gap-3 bg-slate-800 text-sky-400 py-4 rounded-xl font-bold"><XLogo className="w-5 h-5" /> Share to X</button>
+                    </div>
                 </div>
             </div>
         )}
@@ -407,7 +433,6 @@ export default function CoeffRiskAnalyzer() {
               </div>
             </div>
             
-            {/* Column Headers */}
             <div className="flex gap-2 px-1 mb-1">
                 <span className="flex-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider pl-2">Asset</span>
                 <span className="w-24 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Last Price</span>
@@ -442,16 +467,23 @@ export default function CoeffRiskAnalyzer() {
               </div>
               <button onClick={runAnalysis} disabled={isProcessing || isWeightError} className={`w-full font-bold py-3 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 ${isWeightError ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-indigo-500/20"}`}>{isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : isWeightError ? <AlertTriangle className="w-4 h-4"/> : <Activity className="w-4 h-4" />}{isWeightError ? "ADJUST WEIGHTS" : "RUN DIAGNOSTIC"}</button>
               
-              {/* EXPORT, DOWNLOAD & SHARE BUTTONS (3 Buttons Confirmed) */}
+              {/* EXPORT BUTTONS (Adaptive: Grid on Desktop, Single 'Export' on Mobile) */}
               {results && (
-                <div className="grid grid-cols-3 gap-2 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
-                    <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
+                <>
+                    {/* DESKTOP VIEW */}
+                    <div className="hidden sm:grid grid-cols-3 gap-2 mt-4 animate-in fade-in slide-in-from-top-2 no-print">
+                        <button onClick={handleExportPDF} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileText className="w-3 h-3" /> Save PDF</button>
+                        <button onClick={handleExportText} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileDown className="w-3 h-3" /> Export Data</button>
+                        <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
+                    </div>
                     
-                    {/* TEXT EXPORT BUTTON */}
-                    <button onClick={handleExportText} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><FileDown className="w-3 h-3" /> Export Data</button>
-                    
-                    <button onClick={handleShareTwitter} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-sky-400 py-2 rounded-md text-[10px] font-bold uppercase transition-colors border border-slate-700"><XLogo className="w-3 h-3" /> Share</button>
-                </div>
+                    {/* MOBILE VIEW: Single "Actions" Button */}
+                    <div className="sm:hidden mt-4 no-print">
+                        <button onClick={() => setShowMobileMenu(true)} className="w-full flex items-center justify-center gap-2 bg-slate-800 text-indigo-400 py-3 rounded-lg font-bold border border-indigo-500/30">
+                            <Share2 className="w-4 h-4" /> Export & Share Results
+                        </button>
+                    </div>
+                </>
               )}
             </div>
           </Card>
@@ -480,8 +512,6 @@ export default function CoeffRiskAnalyzer() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xs font-bold text-slate-400 uppercase mb-3 text-center">Correlation Matrix</h2>
-                  
-                  {/* CSS GRID with dynamic columns for Vertical Labels */}
                   <div className="grid" style={{ gridTemplateColumns: `40px repeat(${assets.length}, 1fr)` }}>
                     <div className="h-8"></div>
                     {assets.map(a => (
@@ -509,7 +539,6 @@ export default function CoeffRiskAnalyzer() {
           </Card>
         </div>
 
-        {/* SEO & METHODOLOGY SECTION (Restored) */}
         <article className="bg-slate-950 border border-slate-800 rounded-lg p-8 mb-12">
             <div className="flex items-center gap-2 mb-4">
                 <BookOpen className="w-5 h-5 text-indigo-400" />
@@ -518,27 +547,15 @@ export default function CoeffRiskAnalyzer() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-slate-400 leading-relaxed">
                 <div>
                     <h3 className="text-slate-200 font-bold mb-2 flex items-center gap-2">1. Correlation Matrix ($\rho$)</h3>
-                    <p>
-                        True diversification isn't about holding many assets; it's about holding assets that move independently. 
-                        We calculate the <strong>Pearson Correlation Coefficient</strong> for every asset pair over the last 100 trading days.
-                        A score of <strong>1.0</strong> means assets move perfectly together. A score of <strong>-1.0</strong> means they are hedged.
-                    </p>
+                    <p>True diversification isn't about holding many assets; it's about holding assets that move independently. We calculate the <strong>Pearson Correlation Coefficient</strong> for every asset pair over the last 100 trading days. A score of <strong>1.0</strong> means assets move perfectly together. A score of <strong>-1.0</strong> means they are hedged.</p>
                 </div>
                 <div>
                     <h3 className="text-slate-200 font-bold mb-2 flex items-center gap-2">2. Systematic Beta ($\beta$)</h3>
-                    <p>
-                        Beta measures your portfolio's volatility relative to the benchmark (SPY). 
-                        A Beta of <strong>1.5</strong> means your portfolio is theoretically 50% more volatile than the market.
-                        High-growth tech stocks and crypto often push Beta above 2.0, indicating <strong>Leveraged Risk</strong> behavior.
-                    </p>
+                    <p>Beta measures your portfolio's volatility relative to the benchmark (SPY). A Beta of <strong>1.5</strong> means your portfolio is theoretically 50% more volatile than the market. High-growth tech stocks and crypto often push Beta above 2.0, indicating <strong>Leveraged Risk</strong> behavior.</p>
                 </div>
                 <div>
                     <h3 className="text-slate-200 font-bold mb-2 flex items-center gap-2">3. The Non-Linear Risk Curve</h3>
-                    <p>
-                        The <strong>Fragility Score</strong> uses a proprietary weighted algorithm that penalizes correlation concentrations. 
-                        We apply a <strong>square-root scaling function</strong> to the raw average correlation.
-                        This ensures that even moderate correlations (0.5) trigger a high-risk alert (70/100), reflecting the reality that correlations spike during market crashes.
-                    </p>
+                    <p>The <strong>Fragility Score</strong> uses a proprietary weighted algorithm that penalizes correlation concentrations. We apply a <strong>square-root scaling function</strong> to the raw average correlation. This ensures that even moderate correlations (0.5) trigger a high-risk alert (70/100), reflecting the reality that correlations spike during market crashes.</p>
                 </div>
             </div>
         </article>
@@ -561,26 +578,6 @@ export default function CoeffRiskAnalyzer() {
                <div className="flex items-center gap-2"><Activity className="w-4 h-4 text-slate-500" /><span className="text-xs">Real-Time Data</span></div>
             </div>
         </div>
-        )}
-
-        {/* MOBILE INSTALL MODAL (Visible when button clicked) */}
-        {showInstallModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-white">Install App</h3>
-                        <button onClick={() => setShowInstallModal(false)} className="text-slate-400 hover:text-white"><XCircle className="w-6 h-6" /></button>
-                    </div>
-                    <p className="text-slate-400 text-sm mb-4">
-                        Install <strong>coeff.io</strong> to your home screen for a fullscreen experience.
-                    </p>
-                    <ol className="list-decimal list-inside text-slate-300 text-sm space-y-2 mb-6">
-                        <li>Tap the <strong>Share</strong> button (bottom of browser).</li>
-                        <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
-                    </ol>
-                    <button onClick={() => setShowInstallModal(false)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-bold">Got it</button>
-                </div>
-            </div>
         )}
 
       </main>
