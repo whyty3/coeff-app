@@ -4,7 +4,7 @@ import { Activity, Shield, AlertTriangle, Share2, Download, Mail, ArrowRight, La
 
 /**
  * coeff.io - Portfolio Risk & Correlation Analyzer
- * VERSION: Production v3.9 (Final: Catchy Hero Text + All Features)
+ * VERSION: Production v3.13 (Final Gold Master: All Features + Catchy Text + Correct Logo)
  */
 
 const Card = ({ children, className = "" }) => (
@@ -14,7 +14,7 @@ const Card = ({ children, className = "" }) => (
 );
 
 // --- BRAND ASSETS ---
-// CORRECT LOGO: High Contrast "Regression Mark" with Purple Gradient Background
+// High Contrast "Regression Mark" with Purple Gradient Background
 const CoeffLogo = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
@@ -122,12 +122,14 @@ export default function CoeffRiskAnalyzer() {
       if (!walletAddress) { await connectWallet(); return; }
       setIsProcessing(true);
       setTimeout(() => {
+          // Simulated Wallet Data for Demo
           const simulatedHoldings = [
               { ticker: "BTCUSD", value: 50000 }, { ticker: "ETHUSD", value: 30000 },
               { ticker: "SOLUSD", value: 15000 }, { ticker: "XRPUSD", value: 8000 },
               { ticker: "ADAUSD", value: 5000 }, { ticker: "DOTUSD", value: 2000 },
               { ticker: "LINKUSD", value: 1000 }, { ticker: "DOGEUSD", value: 500 }
           ];
+          // The Whale Filter Logic
           const sorted = simulatedHoldings.sort((a, b) => b.value - a.value).slice(0, MAX_ASSETS);
           const meaningful = sorted.filter(item => item.value > 100);
           const totalVal = meaningful.reduce((sum, item) => sum + item.value, 0);
@@ -354,7 +356,7 @@ export default function CoeffRiskAnalyzer() {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          {/* H1 Header: Catchy Copy Restored */}
+          {/* H1 Header: CATCHY COPY Restored */}
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             How fragile is your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">portfolio?</span>
           </h1>
